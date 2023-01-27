@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  scubot-gocq:
+    image: silicer/go-cqhttp
+    restart: always
+    container_name: scubot-gocq
+    depends_on:
+      - scubot-nonebot
+    volumes:
+      - ./data/go-cqhttp/data:/data/data
+      - ./data/go-cqhttp/logs:/data/logs
+      - ./configs/go-cqhttp.yml:/data/config.yml:ro
+      - ./data/go-cqhttp/session.token:/data/session.token
+
+  scubot-nonebot:
+    build: ./nonebot
+    restart: always
+    container_name: scubot-nonebot
+    depends_on:
+      - scubot-scripts
+      - scubot-redis
+    environment:
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=Asia/Shanghai
+    expose:
+      - 9999
+    command: python3 bot.py
+
+  scubot-scripts:
+    build: ./scripts
+    restart: always
+    container_name: scubot-scripts
+    expose:
+      - 7777
+    command: python3 app.py
+
+  scubot-redis:
+    image: redis:7.0.5-alpine
+    restart: always
+    container_name: scubot-redis
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    volumes:
+      - ./configs/redis.conf:/etc/redis/redis.conf:ro
+      - ./data/redis/data/:/data
+    ports:
+      - 54321:6379
+    expose:
+      - 6379
+
